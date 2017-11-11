@@ -16,7 +16,7 @@ Package for semantic segmentation of lane lines, and homographic transformation 
 
  The most recently-segmented image in the feed, untransformed.
 
-`lane_lines_cloud` [(sensor_msgs/Image)](http://docs.ros.org/api/sensor_msgs/html/msg/PointCloud2.html)
+`lane_lines_cloud` [(sensor_msgs/PointCloud2)](http://docs.ros.org/api/sensor_msgs/html/msg/PointCloud2.html)
 
  A point cloud representing the pixels in the segmented image, homographically transformed into the ground plane.
 
