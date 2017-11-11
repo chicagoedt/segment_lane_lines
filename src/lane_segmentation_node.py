@@ -119,9 +119,18 @@ class LaneSegmentationNode:
         pass
 
     def callback(self, data):
-        """Callback for the image_sub Subscriber.
+        """Class methods are similar to regular functions.
 
-        More details.
+        Note:
+            Do not include the `self` parameter in the ``Args`` section.
+
+        Args:
+            param1: The first parameter.
+            param2: The second parameter.
+
+        Returns:
+            True if successful, False otherwise.
+
         """
         self.transform_and_publish(self.segment_and_publish(data))
 
