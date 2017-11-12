@@ -96,17 +96,12 @@ class LaneSegmentationNode:
         # Preprocess input.
         model_input = np.array([img]).astype('float32') / 255
         # Run the semantic segmentation model.
-        with self.graph.as_default():
-            model_output = self.model.predict(model_input)[0] * 255
+        with self.__graph.as_default():
+            model_output = self.__model.predict(model_input)[0] * 255
             lane_lines = model_output.astype(np.uint8)
             lane_lines_rgb = cv2.cvtColor(lane_lines, cv2.COLOR_GRAY2RGB)
-        # NumPy array -> sensor_msgs/Image
-        try:
-            segmented_image = self.bridge.cv2_to_imgmsg(lane_lines_rgb, "rgb8")
-        except CvBridgeError as e:
-            print(e)
         # Publish and return.
-        self.image_pub.publish(segmented_image)
+        self.__image_pub.publish(segmented_image)
         end = time.clock()
         print("Latency: " + str((end - start) * 1000) + " milliseconds.")
 
