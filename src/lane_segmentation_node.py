@@ -23,14 +23,13 @@ import tensorflow as tf
 import cv2
 
 
-class LaneSegmentationNode:
+class LaneSegmentationNode(object):
     """Class providing all functionality of lane_segmentation_node.
 
     Attributes:
         __model (keras.models.Model): The Keras Model object used to segment the
             numpy array containing the image data.
         __bridge (cv_bridge.CvBridge): The default CvBridge object.
-        __graph (tf.Graph): The TensorFlow Graph for the model.
         __image_sub(rospy.Subscriber): Subscriber object which invokes the
             segmentation and transormation as its callback.
         __image_pub (rospy.Publisher):
@@ -40,13 +39,13 @@ class LaneSegmentationNode:
     def __init__(self):
         """LaneSegmentationNode constructor."""
         self.__model = load_model(sys.argv[1])
-        self.__graph = tf.get_default_graph()
         self.__bridge = CvBridge()
-        self.__image_sub = rospy.Subscriber("/stereo_camera/left/image_color", Image, self.callback, queue_size=1, buff_size=100000000)
+        self.__image_sub = rospy.Subscriber("/stereo_camera/left/image_color",
+                    Image, self.__callback, queue_size=1, buff_size=100000000)
         self.__image_pub = rospy.Publisher("/stereo_camera/left/lanes", Image, queue_size=1)
         self.__cloud_pub = rospy.Publisher("/topic/name/here", PointCloud2, queue_size=1)
 
-    def __ros_to_numpy(self, data):
+    def msg_to_numpy(self, data):
         """Extracts image data from Image message.
 
         Args:
@@ -64,7 +63,7 @@ class LaneSegmentationNode:
 
         return raw_img
 
-    def __numpy_to_rox(self, img):
+    def numpy_to_msg(self, img):
         """Builds a Image message from a NumPy array.
 
         Args:
@@ -82,7 +81,7 @@ class LaneSegmentationNode:
         return data
 
     def __segment_and_publish(self, img):
-        """Runs the segmentation model on the
+        """Runs the segmentation model and publishes the result.
 
         Args:
             data (sensor_msgs/Image): The ROS Image message, exactly as passed
@@ -96,18 +95,17 @@ class LaneSegmentationNode:
         # Preprocess input.
         model_input = np.array([img]).astype('float32') / 255
         # Run the semantic segmentation model.
-        with self.__graph.as_default():
-            model_output = self.__model.predict(model_input)[0] * 255
-            lane_lines = model_output.astype(np.uint8)
-            lane_lines_rgb = cv2.cvtColor(lane_lines, cv2.COLOR_GRAY2RGB)
+        with tf.get_default_graph().as_default():
+            lane_lines = (self.__model.predict(model_input)[0] * 255).astype(np.uint8)
         # Publish and return.
-        self.__image_pub.publish(segmented_image)
+        lane_lines_rgb = cv2.cvtColor(lane_lines, cv2.COLOR_GRAY2RGB)
+        self.__image_pub.publish(self.numpy_to_msg(lane_lines_rgb))
         end = time.clock()
         print("Latency: " + str((end - start) * 1000) + " milliseconds.")
 
         return lane_lines
 
-    def __transform_and_publish(self, segmented_image):
+    def __transform_and_publish(self, segmented_img):
         """Class methods are similar to regular functions.
 
         Note:
@@ -137,7 +135,9 @@ class LaneSegmentationNode:
             True if successful, False otherwise.
 
         """
-        self.transform_and_publish(self.segment_and_publish(data))
+        img = self.msg_to_numpy(data)
+        seg = self.__segment_and_publish(img)
+        self.__transform_and_publish(seg)
 
 if __name__ == '__main__':
     rospy.init_node('lane_segmentation_node', anonymous=True)
