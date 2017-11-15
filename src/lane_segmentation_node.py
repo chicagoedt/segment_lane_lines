@@ -149,6 +149,10 @@ if __name__ == '__main__':
 
 
 """
+Note: Due to the raw size of the CMakeLists.txt file, GitHub
+incorrectly classifies this repo as a CMake project.
+Solution: Copy the default CMakeLists.txt into a .py file.
+
 cmake_minimum_required(VERSION 2.8.3)
 project(lane_finding)
 
